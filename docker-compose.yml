@@ -1,0 +1,61 @@
+version: "2"
+services:
+
+  ssh:
+    build: ssh
+    networks:
+      - innernet
+      - outernet
+    networks:
+      innernet:
+        ipv4_address: 172.0.0.10
+      outernet:
+        ipv4_address: 180.0.0.10
+
+  db:
+    image: postgres:9-alpine
+    environment:
+      POSTGRES_DB: wiki
+      POSTGRES_PASSWORD: wikijspass
+      POSTGRES_USER: wikijs
+    logging:
+      driver: "none"
+    volumes:    
+      - ./db-data:/var/lib/postgresql/data
+    networks:
+      innernet:
+        ipv4_address: 172.0.0.20
+
+  wiki:
+    image: requarks/wiki:beta
+    depends_on:
+      - db
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: 172.0.0.20
+      DB_PORT: 5432
+      DB_USER: wikijs
+      DB_PASS: wikijspass
+      DB_NAME: wiki
+    networks:
+      innernet:
+        ipv4_address: 172.0.0.30
+
+networks:
+  innernet:
+    internal: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.0.0.0/27
+        gateway: 172.0.0.1
+
+  outernet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 180.0.0.0/27
+        gateway: 180.0.0.1
+
